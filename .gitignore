@@ -1,0 +1,10 @@
+pochemuchka-results/
+node_modules/
+.DS_Store
+temp/
+
+# IDE configurations
+.opencode/
+.claude/
+.codex/
+.cursor/
