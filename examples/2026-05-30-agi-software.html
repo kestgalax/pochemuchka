@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGI и будущее программного обеспечения</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --text: #18181b;
+      --text-secondary: #52525b;
+      --text-muted: #a1a1aa;
+      --surface: #ffffff;
+      --surface-elevated: #f4f4f5;
+      --border: #e4e4e7;
+      --accent: #0d9488;
+      --accent-light: #14b8a6;
+      --accent-dark: #0f766e;
+      --accent-bg: #f0fdfa;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    [data-theme="dark"] {
+      --bg: #09090b;
+      --text: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --surface: #18181b;
+      --surface-elevated: #27272a;
+      --border: #3f3f46;
+      --accent: #2dd4bf;
+      --accent-light: #5eead4;
+      --accent-dark: #14b8a6;
+      --accent-bg: #134e4a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background 0.3s, color 0.3s;
+    }
+    ::selection { background: var(--accent-bg); color: var(--accent); }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    @media (min-width: 768px) { .container { padding: 0 48px; } }
+
+    .eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+    .display {
+      font-size: clamp(2rem, 5vw, 3.75rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .lead {
+      font-size: clamp(1.125rem, 2.5vw, 1.25rem);
+      line-height: 1.6;
+      color: var(--text-secondary);
+      max-width: 55ch;
+    }
+    .mono-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 50;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .theme-toggle:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .theme-toggle:focus { outline: none; box-shadow: 0 0 0 2px var(--accent); }
+    .theme-toggle svg { width: 20px; height: 20px; }
+    .theme-toggle .sun { color: #f59e0b; }
+    .theme-toggle .moon { color: #818cf8; }
+
+    .hero {
+      min-height: 80dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 80px 0 64px;
+      position: relative;
+    }
+    .hero-content { max-width: 65ch; position: relative; z-index: 2; }
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .hero-meta .dot { color: var(--border); }
+    .hero-deco {
+      position: absolute;
+      right: 0;
+      top: 96px;
+      width: 300px;
+      height: 300px;
+      opacity: 0.04;
+      pointer-events: none;
+      display: none;
+    }
+    @media (min-width: 1024px) { .hero-deco { display: block; } }
+
+    .section { padding: 64px 0; }
+    @media (min-width: 768px) { .section { padding: 96px 0; } }
+    .section-title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .section-subtitle {
+      color: var(--text-secondary);
+      max-width: 55ch;
+      margin-bottom: 48px;
+    }
+
+    .timeline { position: relative; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 8px;
+      bottom: 8px;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--border), var(--text-muted), var(--border));
+    }
+    @media (min-width: 768px) { .timeline::before { left: 88px; } }
+    .timeline-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 64px;
+    }
+    @media (min-width: 768px) {
+      .timeline-item { grid-template-columns: 120px 1fr; gap: 32px; margin-bottom: 80px; }
+    }
+    .timeline-item:last-child { margin-bottom: 0; }
+
+    .timeline-marker {
+      position: absolute;
+      left: 8px;
+      top: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+    }
+    @media (min-width: 768px) { .timeline-marker { left: 76px; } }
+
+    .timeline-marker.accent { background: #0d9488; }
+    [data-theme="dark"] .timeline-marker.accent { background: #2dd4bf; }
+    .timeline-marker.accent-light { background: #14b8a6; }
+    [data-theme="dark"] .timeline-marker.accent-light { background: #5eead4; }
+    .timeline-marker.accent-dark { background: #0f766e; }
+    [data-theme="dark"] .timeline-marker.accent-dark { background: #14b8a6; }
+
+    .timeline-content { padding-left: 56px; }
+    @media (min-width: 768px) { .timeline-content { padding-left: 0; } }
+
+    .timeline-eyebrow {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 767px) { .timeline-eyebrow { display: none; } }
+
+    .timeline-mobile-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      padding-left: 32px;
+    }
+    @media (min-width: 768px) { .timeline-mobile-label { display: none; } }
+
+    .timeline-question {
+      font-size: clamp(1.125rem, 2vw, 1.25rem);
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.35;
+      margin-bottom: 12px;
+    }
+    .timeline-answer {
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 60ch;
+    }
+
+    .root-card {
+      position: relative;
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 32px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    @media (min-width: 768px) { .root-card { padding: 48px; } }
+    .root-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 32px;
+      bottom: 32px;
+      width: 4px;
+      background: var(--accent);
+      border-radius: 0 4px 4px 0;
+    }
+    .root-card-inner { padding-left: 16px; }
+    .root-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .root-title {
+      font-size: clamp(1.25rem, 3vw, 1.75rem);
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 16px;
+      max-width: 50ch;
+    }
+    .root-body {
+      color: var(--text-secondary);
+      line-height: 1.7;
+      max-width: 65ch;
+    }
+
+    .lens-grid { display: flex; flex-direction: column; gap: 16px; max-width: 900px; }
+    .lens-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .lens-card:hover { border-color: var(--accent-light); }
+    .lens-row {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    @media (min-width: 768px) {
+      .lens-row { flex-direction: row; align-items: flex-start; gap: 24px; }
+    }
+    .lens-col { flex: 1; min-width: 0; }
+    .lens-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: 8px;
+    }
+    .lens-arrow svg { width: 24px; height: 24px; color: var(--accent); flex-shrink: 0; }
+    .lens-meaning {
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      margin-top: 12px;
+    }
+    @media (min-width: 768px) {
+      .lens-meaning {
+        padding-top: 0;
+        padding-left: 24px;
+        border-top: none;
+        border-left: 1px solid var(--border);
+        margin-top: 0;
+        width: 220px;
+        flex-shrink: 0;
+      }
+    }
+    .lens-label { margin-bottom: 6px; }
+    .lens-was { color: var(--text-secondary); line-height: 1.6; }
+    .lens-became { color: var(--text); font-weight: 500; line-height: 1.6; }
+    .lens-meaning-text { font-size: 0.9375rem; color: var(--text-secondary); line-height: 1.5; }
+    .lens-meaning-text strong { color: var(--accent); }
+
+    .shift-grid {
+      display: grid;
+      gap: 16px;
+      max-width: 900px;
+    }
+    @media (min-width: 768px) {
+      .shift-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .shift-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid var(--border);
+    }
+    .shift-card h3 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+    .shift-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .shift-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .shift-was {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .shift-became {
+      font-size: 0.9375rem;
+      color: var(--text);
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    .scenario-grid {
+      display: grid;
+      gap: 16px;
+      max-width: 900px;
+    }
+    @media (min-width: 768px) {
+      .scenario-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .scenario-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 28px;
+      border: 1px solid var(--border);
+    }
+    .scenario-card h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .scenario-card p {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .scenario-card .tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      background: var(--accent-bg);
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    .reflection-list { display: flex; flex-direction: column; gap: 24px; max-width: 900px; }
+    .reflection-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .reflection-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-color: var(--accent-light); }
+    .reflection-row { display: flex; gap: 20px; }
+    .reflection-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .reflection-badge span {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .reflection-text { font-size: 1.125rem; line-height: 1.6; color: var(--text); }
+
+    .quote-section { text-align: center; padding: 64px 0; }
+    .quote-icon {
+      width: 40px;
+      height: 40px;
+      color: var(--accent-bg);
+      margin: 0 auto 32px;
+    }
+    .quote-text {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 300;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 32px;
+    }
+    .quote-text .accent { color: var(--accent); }
+    .quote-line {
+      width: 64px;
+      height: 1px;
+      background: var(--border);
+      margin: 0 auto;
+    }
+
+    .footer {
+      padding: 48px 0;
+      border-top: 1px solid var(--border);
+    }
+    .footer-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    @media (min-width: 768px) {
+      .footer-inner { flex-direction: row; justify-content: space-between; align-items: center; }
+    }
+    .footer-text {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
+    <svg class="sun" id="sunIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+      <circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+    </svg>
+    <svg class="moon" id="moonIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+    </svg>
+  </button>
+
+  <script>
+    (function() {
+      var html = document.documentElement;
+      var toggle = document.getElementById('themeToggle');
+      var sun = document.getElementById('sunIcon');
+      var moon = document.getElementById('moonIcon');
+      function updateIcons() {
+        if (html.getAttribute('data-theme') === 'dark') {
+          sun.style.display = 'block'; moon.style.display = 'none';
+        } else {
+          sun.style.display = 'none'; moon.style.display = 'block';
+        }
+      }
+      var saved = localStorage.getItem('pochemuchka-theme');
+      if (saved === 'dark') { html.setAttribute('data-theme', 'dark'); }
+      else if (saved === 'light') { html.removeAttribute('data-theme'); }
+      else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        html.setAttribute('data-theme', 'dark');
+      }
+      updateIcons();
+      toggle.addEventListener('click', function() {
+        if (html.getAttribute('data-theme') === 'dark') {
+          html.removeAttribute('data-theme'); localStorage.setItem('pochemuchka-theme', 'light');
+        } else {
+          html.setAttribute('data-theme', 'dark'); localStorage.setItem('pochemuchka-theme', 'dark');
+        }
+        updateIcons();
+      });
+    })();
+  </script>
+
+  <main class="container">
+
+    <section class="hero">
+      <div class="hero-deco" aria-hidden="true">
+        <svg viewBox="0 0 200 200" fill="none" style="width:100%;height:100%;color:var(--text);">
+          <circle cx="100" cy="40" r="6" fill="currentColor"/><circle cx="60" cy="90" r="6" fill="currentColor"/><circle cx="140" cy="90" r="6" fill="currentColor"/>
+          <circle cx="40" cy="150" r="6" fill="currentColor"/><circle cx="100" cy="150" r="6" fill="currentColor"/><circle cx="160" cy="150" r="6" fill="currentColor"/>
+          <path d="M100 46L60 84M100 46L140 84M60 96L40 144M60 96L100 144M140 96L100 144M140 96L160 144" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="hero-content">
+        <div class="hero-meta">
+          <span class="eyebrow">Анализ перспективных систем</span>
+          <span class="dot" style="color:var(--border);">·</span>
+          <span class="eyebrow" style="font-family:var(--font-mono);">2026-05-30</span>
+        </div>
+        <h1 class="display">AGI и будущее программного обеспечения</h1>
+        <p class="lead" style="margin-top:24px;">Есть разрыв между тем, как сегодня создаётся и используется ПО — человек переводит намерение в формальные артефакты — и тем, что AGI может сделать этот переводной слой ненужным, изменив и процесс создания, и саму природу «использования».</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="reveal">
+        <h2 class="section-title">Цепочка «Почему?»</h2>
+      </div>
+      <div class="timeline" style="margin-top:48px;">
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent"><span>1</span></div>
+            <div class="timeline-mobile-label">Почему 1</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему AGI вообще затронет создание и использование ПО, а не просто ускорит текущие инструменты?</h3>
+            <p class="timeline-answer">Потому что сегодня ПО — это застывший мост между намерением и поведением машины. Разработка — не «написание кода», а цепочка потерь: намерение → требования → дизайн → код → тесты → деплой → UI. Каждый шаг — сжатие контекста. AGI способен держать намерение и контекст целиком, не разбивая их на артефакты.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>2</span></div>
+            <div class="timeline-mobile-label">Почему 2</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему сейчас нужна эта длинная цепочка артефактов?</h3>
+            <p class="timeline-answer">Потому что машины исполняют только явные, однозначные инструкции, а люди мыслят намерениями, нюансами и меняющимся контекстом. За десятилетия мы построили индустрию компенсации этого разрыва: языки, IDE, git, CI/CD, code review, Agile — всё это костыли вокруг одного узкого места: человек как переводчик намерения в форму.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>3</span></div>
+            <div class="timeline-mobile-label">Почему 3</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему переводчиком должен быть человек-разработчик?</h3>
+            <p class="timeline-answer">Потому что знание фрагментировано: намерение — в голове, бизнес-контекст — в документах, поведение — в коде, ограничения — в инфраструктуре. Никто не держит целостную картину. Разработчик — живой контекстный процессор, который стягивает фрагменты и принимает компромиссы там, где система не умеет понимать «зачем».</p>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>4</span></div>
+            <div class="timeline-mobile-label">Почему 4</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему намерение хранится во фрагментах, а не исполняется напрямую?</h3>
+            <p class="timeline-answer">Потому что не существует системы, которая устойчиво понимает и поддерживает намерение во времени. Мы не можем сказать «хочу, чтобы пользователи чувствовали себя уверенно при оплате» и получить работающую систему — мы вынуждены декомпозировать это в поля формы, API-эндпоинты, обработку ошибок, A/B-тесты.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>5</span></div>
+            <div class="timeline-mobile-label">Почему 5</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему «использование» ПО сегодня — отдельный акт от «создания»?</h3>
+            <p class="timeline-answer">Потому что софт — это замороженное намерение прошлых решений. Пользователь подстраивается под застывшие affordances: учит интерфейс, обходит ограничения, просит фичу, ждёт релиз. Любое изменение поведения снова проходит через весь конвейер создания.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-dark"><span>6</span></div>
+            <div class="timeline-mobile-label">Почему 6</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему AGI меняет не инструменты, а модель — и создание, и использование сливаются?</h3>
+            <p class="timeline-answer">Потому что при достаточном понимании намерения граница «создал → задеплоил → использую» исчезает. Система становится исполнителем намерения, а не набором файлов. Создание — это описание желаемого состояния и принципов. Использование — непрерывный диалог с системой, которая адаптирует поведение под контекст. IDE, git, тикеты, даже «приложения» как отдельные сущности могут перестать быть центром.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="reveal">
+        <div class="root-card">
+          <div class="root-card-inner">
+            <span class="root-label">Корень проблемы</span>
+            <h2 class="root-title">Индустрия строительных лесов вокруг невозможности передать намерение напрямую</h2>
+            <p class="root-body">Разработка ПО сегодня — индустрия строительных лесов вокруг невозможности передать и удержать человеческое намерение напрямую в работающую систему. Узкое место никогда не было скорость набора кода — а точность перевода намерения в форму. AGI бьёт не в инструменты (IDE, Copilot), а в саму необходимость перевода: промежуточный слой между «что нужно» и «что работает» может исчезнуть.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="reveal">
+        <h2 class="section-title">Линза переосмысления</h2>
+        <p class="section-subtitle">Данные → Контекст, Проблемы → Намерение, Решения → Принципы</p>
+      </div>
+      <div class="lens-grid reveal" style="margin-top:32px;">
+
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was"><strong>Данные:</strong> репозитории, тикеты, спеки, логи, метрики, документация</p>
+            </div>
+            <div class="lens-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became"><strong>Контекст:</strong> живое понимание ситуации — кто, зачем, при каких ограничениях, что изменилось</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «что лежит в Jira», а <strong>«что это значит для людей прямо сейчас»</strong></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was"><strong>Проблемы:</strong> баги, техдолг, несоответствие требованиям, «фича не так работает»</p>
+            </div>
+            <div class="lens-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became"><strong>Намерение:</strong> описание желаемого состояния — как система должна вести себя, какой опыт создавать</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «починить баг #4521», а <strong>«пользователь должен чувствовать X в ситуации Y»</strong></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was"><strong>Решения:</strong> языки, фреймворки, CI/CD, архитектурные паттерны, UI-киты</p>
+            </div>
+            <div class="lens-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became"><strong>Принципы:</strong> границы, ценности, ограничения — что нельзя нарушать при эволюции</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «какой стек выбрать», а <strong>«что для нас неприемлемо, даже если технически возможно»</strong></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="reveal">
+        <p class="mono-label" style="margin-bottom:12px;">Сдвиг модели</p>
+        <h2 class="section-title">Создание и использование</h2>
+        <p class="section-subtitle">Что исчезает и что остаётся, когда единицей работы становится намерение, а не артефакт</p>
+      </div>
+      <div class="shift-grid reveal" style="margin-top:32px;">
+
+        <div class="shift-card">
+          <h3>Процесс создания</h3>
+          <div class="shift-row">
+            <span class="shift-was">Пишу код в IDE → PR → review → merge → deploy</span>
+            <span class="shift-became">Описываю намерение + принципы → система генерирует, поддерживает и эволюционирует поведение</span>
+          </div>
+          <div class="shift-row">
+            <span class="shift-was">Архитектор проектирует, разработчик реализует, QA проверяет</span>
+            <span class="shift-became">Человек задаёт «компас», AGI — исполнение и самокоррекция</span>
+          </div>
+          <div class="shift-row">
+            <span class="shift-was">Версии, релизы, hotfix-ветки</span>
+            <span class="shift-became">Непрерывное соответствие намерению с наблюдаемым результатом</span>
+          </div>
+        </div>
+
+        <div class="shift-card">
+          <h3>Процесс использования</h3>
+          <div class="shift-row">
+            <span class="shift-was">Учу интерфейс, подстраиваюсь под UX</span>
+            <span class="shift-became">Система подстраивается под мой контекст и намерение</span>
+          </div>
+          <div class="shift-row">
+            <span class="shift-was">«Нужна фича» → тикет → спринт → релиз через месяц</span>
+            <span class="shift-became">«Хочу, чтобы работало так» → адаптация в моменте</span>
+          </div>
+          <div class="shift-row">
+            <span class="shift-was">Отдельные приложения с фиксированными экранами</span>
+            <span class="shift-became">Среда, которая собирает нужное поведение из намерения, а не из заранее написанных экранов</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="reveal">
+        <p class="mono-label" style="margin-bottom:12px;">Два сценария</p>
+        <h2 class="section-title">Куда могут уйти инструменты</h2>
+      </div>
+      <div class="scenario-grid reveal" style="margin-top:32px;">
+
+        <div class="scenario-card">
+          <span class="tag">Compiled Agents</span>
+          <h3>AGI как мост</h3>
+          <p>AGI анализирует намерение → генерирует workflow и код → эксперт ревьюит → деплой. Человек держит принципы, AGI — мост между намерением и исполнением. Инструменты эволюционируют, но промежуточный слой (код, графы, пайплайны) пока остаётся.</p>
+        </div>
+
+        <div class="scenario-card">
+          <span class="tag">Intent Infrastructure</span>
+          <h3>AGI как исполнитель</h3>
+          <p>Человек описывает намерение и принципы напрямую → система исполняет. Код, репозитории, CI/CD, возможно даже «приложения» как категория — становятся внутренней реализацией, невидимой для человека. Ты не строишь мост — ты называешь берег.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="reveal" style="max-width:900px;margin:0 auto;">
+        <p class="mono-label" style="margin-bottom:12px;">Переход</p>
+        <h2 class="section-title">Вопросы для размышления</h2>
+        <div class="reflection-list" style="margin-top:40px;">
+
+          <div class="reflection-card reveal">
+            <div class="reflection-row">
+              <div class="reflection-badge"><span>1</span></div>
+              <p class="reflection-text">Если единицей работы станет не «коммит» или «тикет», а устойчивое намерение с наблюдаемым результатом — что из вашей текущей практики вы бы сохранили как принципы, а что окажется просто артефактом перевода, который больше не нужен?</p>
+            </div>
+          </div>
+
+          <div class="reflection-card reveal">
+            <div class="reflection-row">
+              <div class="reflection-badge"><span>2</span></div>
+              <p class="reflection-text">Если граница «создаю софт / пользуюсь софтом» исчезнет — какую роль вы хотите оставить за собой: оператора, который формулирует задачи, или того, кто задаёт принципы и границы, внутри которых система свободна?</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <section class="quote-section">
+      <div class="reveal">
+        <svg class="quote-icon" viewBox="0 0 32 32" fill="currentColor">
+          <path d="M10 8c-3.3 0-6 2.7-6 6v10h10V14H8c0-1.1.9-2 2-2V8zm14 0c-3.3 0-6 2.7-6 6v10h10V14h-6c0-1.1.9-2 2-2V8z"/>
+        </svg>
+        <blockquote class="quote-text">
+          Понимай ситуацию.<br><span class="accent">Опиши желаемое.</span><br>Доверься принципам.
+        </blockquote>
+        <div class="quote-line"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-text">Анализ методом почемучка · 2026-05-30</p>
+        <p class="footer-text">AGI · Создание и использование ПО</p>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    (function() {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+      document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+    })();
+  </script>
+
+</body>
+</html>
