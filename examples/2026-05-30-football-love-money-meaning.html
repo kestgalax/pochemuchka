@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Футбол: любовь, деньги и смысл</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --text: #18181b;
+      --text-secondary: #52525b;
+      --text-muted: #a1a1aa;
+      --surface: #ffffff;
+      --surface-elevated: #f4f4f5;
+      --border: #e4e4e7;
+      --accent: #0d9488;
+      --accent-light: #14b8a6;
+      --accent-dark: #0f766e;
+      --accent-bg: #f0fdfa;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    [data-theme="dark"] {
+      --bg: #09090b;
+      --text: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --surface: #18181b;
+      --surface-elevated: #27272a;
+      --border: #3f3f46;
+      --accent: #2dd4bf;
+      --accent-light: #5eead4;
+      --accent-dark: #14b8a6;
+      --accent-bg: #134e4a;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+    body { font-family: var(--font-sans); background: var(--bg); color: var(--text); line-height: 1.6; transition: background 0.3s, color 0.3s; }
+    ::selection { background: var(--accent-bg); color: var(--accent); }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    @media (min-width: 768px) { .container { padding: 0 48px; } }
+    .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text-muted); font-weight: 500; margin-bottom: 16px; }
+    .display { font-size: clamp(2rem, 5vw, 3.75rem); line-height: 1.05; letter-spacing: -0.02em; font-weight: 700; color: var(--text); }
+    .lead { font-size: clamp(1.125rem, 2.5vw, 1.25rem); line-height: 1.6; color: var(--text-secondary); max-width: 55ch; }
+    .mono-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--text-muted); font-weight: 600; }
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+    .theme-toggle { position: fixed; top: 24px; right: 24px; z-index: 50; width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+    .theme-toggle:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .theme-toggle:focus { outline: none; box-shadow: 0 0 0 2px var(--accent); }
+    .theme-toggle svg { width: 20px; height: 20px; }
+    .theme-toggle .sun { color: #f59e0b; }
+    .theme-toggle .moon { color: #818cf8; }
+    .hero { min-height: 70dvh; display: flex; flex-direction: column; justify-content: center; padding: 80px 0 64px; position: relative; }
+    .hero-content { max-width: 65ch; position: relative; z-index: 2; }
+    .hero-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .hero-meta .dot { color: var(--border); }
+    .hero-deco { position: absolute; right: 0; top: 96px; width: 300px; height: 300px; opacity: 0.04; pointer-events: none; display: none; }
+    @media (min-width: 1024px) { .hero-deco { display: block; } }
+    .part-nav { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; }
+    .part-nav a { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); text-decoration: none; font-size: 0.875rem; font-weight: 500; transition: border-color 0.2s, color 0.2s, box-shadow 0.2s; }
+    .part-nav a:hover { border-color: var(--accent-light); color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .part-nav a .num { font-family: var(--font-mono); font-size: 10px; color: var(--accent); font-weight: 700; }
+    .section { padding: 64px 0; }
+    @media (min-width: 768px) { .section { padding: 96px 0; } }
+    .section-title { font-size: clamp(1.75rem, 4vw, 2.5rem); letter-spacing: -0.02em; line-height: 1.1; color: var(--text); margin-bottom: 16px; }
+    .section-subtitle { color: var(--text-secondary); max-width: 55ch; margin-bottom: 48px; }
+    .part-divider { border-top: 1px solid var(--border); margin: 0; }
+    .part-header { margin-bottom: 48px; }
+    .part-badge { display: inline-block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); background: var(--accent-bg); padding: 6px 14px; border-radius: 999px; margin-bottom: 16px; font-weight: 600; }
+    .part-thesis { font-size: 1.125rem; line-height: 1.65; color: var(--text-secondary); max-width: 65ch; margin-top: 12px; padding-left: 16px; border-left: 3px solid var(--accent-bg); }
+    .timeline { position: relative; }
+    .timeline::before { content: ''; position: absolute; left: 20px; top: 8px; bottom: 8px; width: 1px; background: linear-gradient(to bottom, var(--border), var(--text-muted), var(--border)); }
+    @media (min-width: 768px) { .timeline::before { left: 88px; } }
+    .timeline-item { position: relative; display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 64px; }
+    @media (min-width: 768px) { .timeline-item { grid-template-columns: 120px 1fr; gap: 32px; margin-bottom: 80px; } }
+    .timeline-item:last-child { margin-bottom: 0; }
+    .timeline-marker { position: absolute; left: 8px; top: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; z-index: 10; font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: #fff; }
+    @media (min-width: 768px) { .timeline-marker { left: 76px; } }
+    .timeline-marker.accent { background: #0d9488; }
+    [data-theme="dark"] .timeline-marker.accent { background: #2dd4bf; }
+    .timeline-marker.accent-light { background: #14b8a6; }
+    [data-theme="dark"] .timeline-marker.accent-light { background: #5eead4; }
+    .timeline-marker.accent-dark { background: #0f766e; }
+    [data-theme="dark"] .timeline-marker.accent-dark { background: #14b8a6; }
+    .timeline-content { padding-left: 56px; }
+    @media (min-width: 768px) { .timeline-content { padding-left: 0; } }
+    .timeline-eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+    @media (max-width: 767px) { .timeline-eyebrow { display: none; } }
+    .timeline-mobile-label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text-muted); margin-bottom: 8px; padding-left: 32px; }
+    @media (min-width: 768px) { .timeline-mobile-label { display: none; } }
+    .timeline-question { font-size: clamp(1.125rem, 2vw, 1.25rem); font-weight: 600; color: var(--text); line-height: 1.35; margin-bottom: 12px; }
+    .timeline-blockquote { position: relative; padding-left: 16px; margin-top: 12px; border-left: 2px solid var(--accent-bg); }
+    .timeline-blockquote p { color: var(--text-secondary); font-style: italic; line-height: 1.6; max-width: 60ch; }
+    .root-card { position: relative; background: var(--surface); border-radius: 16px; padding: 32px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    @media (min-width: 768px) { .root-card { padding: 48px; } }
+    .root-card::before { content: ''; position: absolute; left: 0; top: 32px; bottom: 32px; width: 4px; background: var(--accent); border-radius: 0 4px 4px 0; }
+    .root-card-inner { padding-left: 16px; }
+    .root-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); font-weight: 600; margin-bottom: 16px; display: block; }
+    .root-title { font-size: clamp(1.25rem, 3vw, 1.75rem); line-height: 1.3; letter-spacing: -0.01em; color: var(--text); margin-bottom: 16px; max-width: 50ch; }
+    .root-body { color: var(--text-secondary); line-height: 1.7; max-width: 65ch; }
+    .lens-grid { display: flex; flex-direction: column; gap: 16px; max-width: 900px; }
+    .lens-card { background: var(--surface); border-radius: 12px; padding: 24px; border: 1px solid var(--border); transition: border-color 0.2s, box-shadow 0.2s; }
+    .lens-card:hover { border-color: var(--accent-light); }
+    .lens-row { display: flex; flex-direction: column; gap: 16px; }
+    @media (min-width: 768px) { .lens-row { flex-direction: row; align-items: flex-start; gap: 24px; } }
+    .lens-col { flex: 1; min-width: 0; }
+    .lens-arrow { display: flex; align-items: center; justify-content: center; padding-top: 8px; }
+    .lens-arrow svg { width: 24px; height: 24px; color: var(--accent); flex-shrink: 0; }
+    .lens-meaning { padding-top: 12px; border-top: 1px solid var(--border); margin-top: 12px; }
+    @media (min-width: 768px) { .lens-meaning { padding-top: 0; padding-left: 24px; border-top: none; border-left: 1px solid var(--border); margin-top: 0; width: 220px; flex-shrink: 0; } }
+    .lens-label { margin-bottom: 6px; }
+    .lens-was { color: var(--text-secondary); line-height: 1.6; }
+    .lens-became { color: var(--text); font-weight: 500; line-height: 1.6; }
+    .lens-meaning-text { font-size: 0.9375rem; color: var(--text-secondary); line-height: 1.5; }
+    .lens-meaning-text strong { color: var(--accent); }
+    .reflection-list { display: flex; flex-direction: column; gap: 24px; max-width: 900px; }
+    .reflection-card { background: var(--surface); border-radius: 12px; padding: 24px; border: 1px solid var(--border); transition: box-shadow 0.2s, border-color 0.2s; }
+    .reflection-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-color: var(--accent-light); }
+    .reflection-row { display: flex; gap: 20px; }
+    .reflection-badge { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .reflection-badge span { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--accent); }
+    .reflection-text { font-size: 1.125rem; line-height: 1.6; color: var(--text); }
+    .synthesis-grid { display: grid; gap: 16px; max-width: 900px; }
+    @media (min-width: 768px) { .synthesis-grid { grid-template-columns: repeat(3, 1fr); } }
+    .synthesis-card { background: var(--surface); border-radius: 12px; padding: 24px; border: 1px solid var(--border); }
+    .synthesis-card h4 { font-size: 0.9375rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .synthesis-card p { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.55; }
+    .synthesis-root { margin-top: 32px; max-width: 65ch; color: var(--text-secondary); line-height: 1.7; font-size: 1.0625rem; }
+    .synthesis-root strong { color: var(--text); }
+    .quote-section { text-align: center; padding: 64px 0; }
+    .quote-icon { width: 40px; height: 40px; color: var(--accent-bg); margin: 0 auto 32px; }
+    .quote-text { font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 300; line-height: 1.3; letter-spacing: -0.02em; color: var(--text); margin-bottom: 32px; }
+    .quote-text .accent { color: var(--accent); }
+    .quote-line { width: 64px; height: 1px; background: var(--border); margin: 0 auto; }
+    .footer { padding: 48px 0; border-top: 1px solid var(--border); }
+    .footer-inner { display: flex; flex-direction: column; gap: 12px; }
+    @media (min-width: 768px) { .footer-inner { flex-direction: row; justify-content: space-between; align-items: center; } }
+    .footer-text { font-size: 0.875rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
+    <svg class="sun" id="sunIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+      <circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+    </svg>
+    <svg class="moon" id="moonIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+    </svg>
+  </button>
+
+  <script>
+    (function() {
+      var html = document.documentElement;
+      var toggle = document.getElementById('themeToggle');
+      var sun = document.getElementById('sunIcon');
+      var moon = document.getElementById('moonIcon');
+      function updateIcons() {
+        if (html.getAttribute('data-theme') === 'dark') {
+          sun.style.display = 'block'; moon.style.display = 'none';
+        } else {
+          sun.style.display = 'none'; moon.style.display = 'block';
+        }
+      }
+      var saved = localStorage.getItem('pochemuchka-theme');
+      if (saved === 'dark') { html.setAttribute('data-theme', 'dark'); }
+      else if (saved === 'light') { html.removeAttribute('data-theme'); }
+      else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        html.setAttribute('data-theme', 'dark');
+      }
+      updateIcons();
+      toggle.addEventListener('click', function() {
+        if (html.getAttribute('data-theme') === 'dark') {
+          html.removeAttribute('data-theme'); localStorage.setItem('pochemuchka-theme', 'light');
+        } else {
+          html.setAttribute('data-theme', 'dark'); localStorage.setItem('pochemuchka-theme', 'dark');
+        }
+        updateIcons();
+      });
+    })();
+  </script>
+
+  <main class="container">
+
+    <section class="hero">
+      <div class="hero-deco" aria-hidden="true">
+        <svg viewBox="0 0 200 200" fill="none" style="width:100%;height:100%;color:var(--text);">
+          <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M100 20 L100 180 M20 100 L180 100" stroke="currentColor" stroke-width="1"/>
+          <circle cx="100" cy="100" r="12" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="hero-content">
+        <div class="hero-meta">
+          <span class="eyebrow">Анализ методом почемучка</span>
+          <span class="dot" style="color:var(--border);">·</span>
+          <span class="eyebrow" style="font-family:var(--font-mono);">2026-05-30</span>
+        </div>
+        <h1 class="display">Футбол: любовь, деньги и смысл</h1>
+        <p class="lead" style="margin-top:24px;">Три связанных разбора — от разрыва между фанатами и индустрией до того, зачем люди смотрят на «22 мужиков, пинающих мяч».</p>
+        <nav class="part-nav" aria-label="Разделы">
+          <a href="#part1"><span class="num">01</span> Коммерциализация</a>
+          <a href="#part2"><span class="num">02</span> Богатство Европы</a>
+          <a href="#part3"><span class="num">03</span> Зачем смотреть</a>
+          <a href="#synthesis"><span class="num">∑</span> Синтез</a>
+        </nav>
+      </div>
+    </section>
+
+    <!-- PART 1 -->
+    <hr class="part-divider" id="part1">
+    <section class="section">
+      <div class="part-header reveal">
+        <span class="part-badge">Часть 1</span>
+        <h2 class="section-title">Коммерциализация и фанаты</h2>
+        <p class="part-thesis">Есть разрыв между массовой любовью к футболу и тем, как коммерциализация превращает игру в продукт — отдаляя фанатов от того, ради чего они полюбили игру.</p>
+      </div>
+      <div class="reveal"><h3 class="section-subtitle" style="margin-bottom:32px;">Цепочка «Почему?»</h3></div>
+      <div class="timeline" style="margin-bottom:64px;">
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent"><span>1</span></div>
+            <div class="timeline-mobile-label">Почему 1</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему коммерциализация отдаляет фанатов, хотя интерес к футболу только растёт?</h3>
+            <div class="timeline-blockquote"><p>Потому что бизнес-модель оптимизирует не живой опыт болельщика, а монетизируемые единицы: права на трансляции, спонсорские интеграции, премиальные места, глобальный охват. Обычный фанат — не центр, а один из каналов выручки.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>2</span></div>
+            <div class="timeline-mobile-label">Почему 2</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему модель оптимизирует монетизацию, а не опыт?</h3>
+            <div class="timeline-blockquote"><p>Потому что клубы и лиги стали корпорациями с ответственностью перед инвесторами, акционерами и медиапартнёрами. Успех измеряется EBITDA и стоимостью контрактов — а не тем, насколько сообщество чувствует себя «дома».</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>3</span></div>
+            <div class="timeline-mobile-label">Почему 3</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему футбол стал подотчётен капиталу и медиа, а не сообществу?</h3>
+            <div class="timeline-blockquote"><p>Потому что глобализация потребовала капитала, который местные фанаты не могли дать. Игра упаковалась как глобальный продукт — матч превратился из события сообщества в контент для дистрибуции.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>4</span></div>
+            <div class="timeline-mobile-label">Почему 4</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему глобальный продукт требует превращать матч в контент?</h3>
+            <div class="timeline-blockquote"><p>Потому что отношение меняется: из участия («мы — этот клуб») — в транзакцию («мы платим за доступ к шоу»). Глубокая принадлежность не масштабируется так же эффективно, как права на трансляцию.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>5</span></div>
+            <div class="timeline-mobile-label">Почему 5</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему принадлежность хуже масштабируется, чем медиаправа?</h3>
+            <div class="timeline-blockquote"><p>Потому что принадлежность — отношение: локальное, непредсказуемое, трудно исключаемое. Коммерции нужна измеримость. Промежуточный слой конвертирует страсть в выручку — и оставляет только то, что рынок умеет считать.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-dark"><span>6</span></div>
+            <div class="timeline-mobile-label">Почему 6</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему система не удерживает то, что не считается?</h3>
+            <div class="timeline-blockquote"><p>Потому что нет обратной связи от «фанатской принадлежности» к «бизнес-метрикам». Две логики существуют параллельно: фанаты живут футболом как идентичностью; индустрия — как медиа-инвентарём.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" style="margin-bottom:64px;">
+        <div class="root-card">
+          <div class="root-card-inner">
+            <span class="root-label">Корень</span>
+            <h3 class="root-title">Конфликт двух логик: отношение vs продукт</h3>
+            <p class="root-body">Любовь к футболу — отношение (участие, локальность, «мы»). Коммерциализация требует продукт (исключение, цена, права, охват). Между ними — переводческий слой, который превращает страсть в выручку и отбрасывает всё, что плохо монетизируется.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal"><h3 class="section-subtitle">Линза переосмысления</h3></div>
+      <div class="lens-grid reveal">
+        <div class="lens-card">
+          <div class="lens-row">
+            <div class="lens-col"><div class="lens-label mono-label">Было</div><p class="lens-was">Рейтинги, выручка, цены билетов, охват трансляций</p></div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col"><div class="lens-label mono-label" style="color:var(--accent);">Стало</div><p class="lens-became">Футбол как идентичность и как контентный продукт — смыслы расходятся</p></div>
+            <div class="lens-meaning"><p class="lens-meaning-text">Не «сколько смотрят», а <strong>«что значит быть фанатом сегодня»</strong></p></div>
+          </div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-row">
+            <div class="lens-col"><div class="lens-label mono-label">Было</div><p class="lens-was">Коммерциализация отдаляет, фанаты чувствуют себя чужими</p></div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col"><div class="lens-label mono-label" style="color:var(--accent);">Стало</div><p class="lens-became">Сохранить живое участие, не сводя игру к потреблению шоу</p></div>
+            <div class="lens-meaning"><p class="lens-meaning-text">Не «коммерциализация плоха», а <strong>«люди хотят быть частью, а не аудиторией»</strong></p></div>
+          </div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-row">
+            <div class="lens-col"><div class="lens-label mono-label">Было</div><p class="lens-was">Субсидировать билеты, fan ownership, бойкоты</p></div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col"><div class="lens-label mono-label" style="color:var(--accent);">Стало</div><p class="lens-became">Принадлежность не вторична; то, что система не считает, она разрушает</p></div>
+            <div class="lens-meaning"><p class="lens-meaning-text">Не «как чинить цены», а <strong>«на что ориентироваться при любом решении»</strong></p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PART 2 -->
+    <hr class="part-divider" id="part2">
+    <section class="section">
+      <div class="part-header reveal">
+        <span class="part-badge">Часть 2</span>
+        <h2 class="section-title">Популярность и богатство Европы</h2>
+        <p class="part-thesis">Европейский футбол — самый популярный и самый богатый. Это результат истории, инфраструктуры и коммерческой архитектуры, превратившей игру в глобальный актив.</p>
+      </div>
+      <div class="reveal"><h3 class="section-subtitle" style="margin-bottom:32px;">Цепочка «Почему?»</h3></div>
+      <div class="timeline" style="margin-bottom:64px;">
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent"><span>1</span></div>
+            <div class="timeline-mobile-label">Почему 1</div>
+            <h3 class="timeline-question">Почему европейский футбол так популярен?</h3>
+            <div class="timeline-blockquote"><p>Он вырос из массовой культуры: простые правила, еженедельный ритуал, локальная идентичность. Англия экспортировала игру — футбол стал общим языком миллионов ещё до телевидения.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>2</span></div>
+            <div class="timeline-mobile-label">Почему 2</div>
+            <h3 class="timeline-question">Почему именно Европа первой превратила популярность в деньги?</h3>
+            <div class="timeline-blockquote"><p>Здесь раньше сложилась профессиональная инфраструктура. Когда в 1990–2000-х пришла телевизионная революция, Европа уже имела готовый конвейер — его подключили к глобальным медиа.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>3</span></div>
+            <div class="timeline-mobile-label">Почему 3</div>
+            <h3 class="timeline-question">Почему европейский футбол монетизировал аудиторию по всему миру?</h3>
+            <div class="timeline-blockquote"><p>Удобный глобальный продукт: бренды с историей, высокий уровень, драматургия турниров, удобные часовые пояса. UEFA превратила Лигу чемпионов в премиальное дефицитное шоу.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>4</span></div>
+            <div class="timeline-mobile-label">Почему 4</div>
+            <h3 class="timeline-question">Почему популярность так резко конвертируется в богатство?</h3>
+            <div class="timeline-blockquote"><p>Рынок дефицитный и аукционный. Платформы соревнуются за эксклюзив. Деньги концентрируются у победителей — самоусиливающийся цикл.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>5</span></div>
+            <div class="timeline-mobile-label">Почему 5</div>
+            <h3 class="timeline-question">Почему цикл популярности и богатства не останавливается?</h3>
+            <div class="timeline-blockquote"><p>Система измеряет успех только в измеримых единицах. Всё, что не конвертируется — локальная принадлежность, доступность билетов — системно обесценивается.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-dark"><span>6</span></div>
+            <div class="timeline-mobile-label">Почему 6</div>
+            <h3 class="timeline-question">Почему именно европейская модель победила?</h3>
+            <div class="timeline-blockquote"><p>Европа объединила единый рынок труда, единый медиарынок и единый бренд (Лига чемпионов). Южная Америка производит талант, Азия покупает права — Европа производит, упаковывает и продаёт.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" style="margin-bottom:64px;">
+        <div class="root-card">
+          <div class="root-card-inner">
+            <span class="root-label">Корень</span>
+            <h3 class="root-title">Богатство — не побочный эффект, а архитектура</h3>
+            <p class="root-body">Европейский футбол богат не «несмотря на» коммерциализацию, а благодаря ей. Популярность — топливо, медиаправа — двигатель, UEFA и топ-лиги — конвейер. Разрыв с фанатами — структурная плата за модель.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal"><h3 class="section-subtitle">Линза переосмысления</h3></div>
+      <div class="lens-grid reveal">
+        <div class="lens-card">
+          <div class="lens-row">
+            <div class="lens-col"><div class="lens-label mono-label">Было</div><p class="lens-was">Охват, трансферные суммы, рейтинг UEFA, стоимость клубов</p></div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col"><div class="lens-label mono-label" style="color:var(--accent);">Стало</div><p class="lens-became">Популярность и богатство — один механизм с двумя сторонами</p></div>
+            <div class="lens-meaning"><p class="lens-meaning-text">Не «сколько стоит», а <strong>«как страсть превращается в капитал»</strong></p></div>
+          </div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-row">
+            <div class="lens-col"><div class="lens-label mono-label">Было</div><p class="lens-was">«Слишком коммерческий» vs «популярен, потому что успешен»</p></div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col"><div class="lens-label mono-label" style="color:var(--accent);">Стало</div><p class="lens-became">Сохранить масштаб, не разрушая принадлежность</p></div>
+            <div class="lens-meaning"><p class="lens-meaning-text">Не «коммерция vs душа», а <strong>«что должно оставаться общим»</strong></p></div>
+          </div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-row">
+            <div class="lens-col"><div class="lens-label mono-label">Было</div><p class="lens-was">Salary cap, fan ownership, FFP</p></div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col"><div class="lens-label mono-label" style="color:var(--accent);">Стало</div><p class="lens-became">Дефицит ≠ исключение; богатство системы ≠ богатство сообщества</p></div>
+            <div class="lens-meaning"><p class="lens-meaning-text">Не «как ограничить деньги», а <strong>«что считается успехом, кроме выручки»</strong></p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PART 3 -->
+    <hr class="part-divider" id="part3">
+    <section class="section">
+      <div class="part-header reveal">
+        <span class="part-badge">Часть 3</span>
+        <h2 class="section-title">22 мужика и мяч</h2>
+        <p class="part-thesis">Люди смотрят не на мяч — они смотрят на массовый ритуал, где за 90 минут разворачивается общая судьба «мы».</p>
+      </div>
+      <div class="reveal"><h3 class="section-subtitle" style="margin-bottom:32px;">Цепочка «Почему?»</h3></div>
+      <div class="timeline" style="margin-bottom:64px;">
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent"><span>1</span></div>
+            <h3 class="timeline-question">Почему смотреть, как незнакомые люди гоняют мяч?</h3>
+            <div class="timeline-blockquote"><p>Это не про мяч. Это управляемый конфликт с правилами, героями, неожиданностью и финалом. Мозг реагирует на историю, а не на физику удара.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>2</span></div>
+            <h3 class="timeline-question">Почему конфликт незнакомцев так цепляет?</h3>
+            <div class="timeline-blockquote"><p>Встроенный интерес к групповой борьбе и статусу. Футбол — безопасная версия «мы против них»: эмоции настоящие, последствия символические.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>3</span></div>
+            <h3 class="timeline-question">Почему нужен символический конфликт?</h3>
+            <div class="timeline-blockquote"><p>В жизни мало общих ритуалов для коллективного переживания. Матч даёт цельный эмоциональный акт на 90 минут.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>4</span></div>
+            <h3 class="timeline-question">Почему «мы» строится вокруг команды?</h3>
+            <div class="timeline-blockquote"><p>Команда — дешёвый прокси идентичности: достаточно выбрать сторону. Вложенность растёт со временем и превращает зрительство в часть биографии.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>5</span></div>
+            <h3 class="timeline-question">Почему прокси-идентичность так сильна?</h3>
+            <div class="timeline-blockquote"><p>Людям нужно быть частью чего-то больше себя. Футбол сжимает город, класс, нацию в одно событие. Мяч ни о чём — «мы» обо всём.</p></div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-dark"><span>6</span></div>
+            <h3 class="timeline-question">Почему хватило «пинания мяча»?</h3>
+            <div class="timeline-blockquote"><p>Простота оставляет максимум места для проекции. Абсурдность снаружи — условие универсальности.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" style="margin-bottom:64px;">
+        <div class="root-card">
+          <div class="root-card-inner">
+            <span class="root-label">Корень</span>
+            <h3 class="root-title">Театр принадлежности, а не физика мяча</h3>
+            <p class="root-body">Люди смотрят на дешёвый массовый театр «мы/они» в реальном времени. Мяч — пустой носитель; ценность — в коллективном переживании. Если индустрия продаёт шоу, а не «мы», зритель остаётся с мячом — но без ритуала.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal"><h3 class="section-subtitle">Линза переосмысления</h3></div>
+      <div class="lens-grid reveal">
+        <div class="lens-card">
+          <div class="lens-row">
+            <div class="lens-col"><div class="lens-label mono-label">Было</div><p class="lens-was">22 игрока, 90 минут, счёт, статистика</p></div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col"><div class="lens-label mono-label" style="color:var(--accent);">Стало</div><p class="lens-became">Совместное переживание судьбы «своих»</p></div>
+            <div class="lens-meaning"><p class="lens-meaning-text">Не «что на поле», а <strong>«что это значит для меня и моих»</strong></p></div>
+          </div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-row">
+            <div class="lens-col"><div class="lens-label mono-label">Было</div><p class="lens-was">«Зачем смотреть глупость»</p></div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col"><div class="lens-label mono-label" style="color:var(--accent);">Стало</div><p class="lens-became">Общий ритуал, принадлежность, выход эмоций</p></div>
+            <div class="lens-meaning"><p class="lens-meaning-text">Не «скучно или нет», а <strong>«где быть частью чего-то большего»</strong></p></div>
+          </div>
+        </div>
+        <div class="lens-card">
+          <div class="lens-row">
+            <div class="lens-col"><div class="lens-label mono-label">Было</div><p class="lens-was">Топ-лиги, абонемент, чаты, стадион</p></div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col"><div class="lens-label mono-label" style="color:var(--accent);">Стало</div><p class="lens-became">Смысл важнее шоу; «мы» важнее бренда</p></div>
+            <div class="lens-meaning"><p class="lens-meaning-text">Не «как смотреть», а <strong>«ради чего включаю трансляцию»</strong></p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SYNTHESIS -->
+    <hr class="part-divider" id="synthesis">
+    <section class="section">
+      <div class="reveal">
+        <p class="mono-label" style="margin-bottom:12px;">Синтез</p>
+        <h2 class="section-title">Три разбора — одна картина</h2>
+      </div>
+      <div class="synthesis-grid reveal" style="margin-top:40px;">
+        <div class="synthesis-card">
+          <h4>Коммерциализация</h4>
+          <p>Индустрия монетизирует страсть, отрезая «мы»</p>
+        </div>
+        <div class="synthesis-card">
+          <h4>Богатство Европы</h4>
+          <p>Машина масштабирует и концентрирует эту страсть</p>
+        </div>
+        <div class="synthesis-card">
+          <h4>22 мужика и мяч</h4>
+          <p>Откуда берётся потребность, которую потом продают</p>
+        </div>
+      </div>
+      <p class="synthesis-root reveal"><strong>Общий корень:</strong> Футбол — ритуал принадлежности, который оказался идеальным сырьём для глобального продукта. Европа построила машину, превращающую «мы» в деньги — и системно отсекает всё, что плохо считается. Разрыв с фанатами — не баг успешной модели, а её feature.</p>
+    </section>
+
+    <!-- REFLECTION -->
+    <section class="section">
+      <div class="reveal" style="max-width:900px;margin:0 auto;">
+        <p class="mono-label" style="margin-bottom:12px;">Переход</p>
+        <h2 class="section-title">Вопросы для размышления</h2>
+        <div class="reflection-list" style="margin-top:40px;">
+          <div class="reflection-card reveal">
+            <div class="reflection-row">
+              <div class="reflection-badge"><span>1</span></div>
+              <p class="reflection-text">Если вы смотрите не на мяч, а на ритуал «мы» — что меняется в отношении к dynamic pricing, календарю под ТВ и клубу как lifestyle-бренду?</p>
+            </div>
+          </div>
+          <div class="reflection-card reveal">
+            <div class="reflection-row">
+              <div class="reflection-badge"><span>2</span></div>
+              <p class="reflection-text">Можно ли вернуть фанатам игру, не разрушив то, что сделало её великой — и какой принцип вы поставили бы выше выручки как реальную метрику?</p>
+            </div>
+          </div>
+          <div class="reflection-card reveal">
+            <div class="reflection-row">
+              <div class="reflection-badge"><span>3</span></div>
+              <p class="reflection-text">Почему именно футбол удержал вас (или не удержал) — если «мы» можно построить вокруг чего угодно простого?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="quote-section">
+      <div class="reveal">
+        <svg class="quote-icon" viewBox="0 0 32 32" fill="currentColor">
+          <path d="M10 8c-3.3 0-6 2.7-6 6v10h10V14H8c0-1.1.9-2 2-2V8zm14 0c-3.3 0-6 2.7-6 6v10h10V14h-6c0-1.1.9-2 2-2V8z"/>
+        </svg>
+        <blockquote class="quote-text">
+          Понимай ситуацию.<br><span class="accent">Опиши желаемое.</span><br>Доверься принципам.
+        </blockquote>
+        <div class="quote-line"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-text">Анализ методом почемучка · 2026-05-30</p>
+        <p class="footer-text">Футбол: любовь, деньги и смысл</p>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    (function() {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+      document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+    })();
+  </script>
+
+</body>
+</html>
