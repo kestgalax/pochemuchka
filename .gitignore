@@ -2,6 +2,7 @@ pochemuchka-results/
 node_modules/
 .DS_Store
 temp/
+skills-lock.json
 
 # IDE configurations
 .agents/
