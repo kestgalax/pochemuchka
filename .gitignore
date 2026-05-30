@@ -4,6 +4,7 @@ node_modules/
 temp/
 
 # IDE configurations
+.agents/
 .opencode/
 .claude/
 .codex/
