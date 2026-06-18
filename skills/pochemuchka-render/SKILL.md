@@ -1,6 +1,6 @@
 ---
 name: pochemuchka-render
-description: Рендерит markdown-результат навыка pochemuchka (или аналогичный markdown с цепочкой 5 Why, корнем, линзой) в полностью автономную HTML-страницу с editorial UI/UX. Используй, когда пользователь просит "оформи это как страницу", "сделай HTML", "визуализируй почемучку", "сверстай", "преврати в веб-страницу".
+description: Рендерит markdown-результат навыка pochemuchka (цепочка 5 Why, корень, линза, AI-проверка, переход) в полностью автономную HTML-страницу с editorial UI/UX. Используй, когда пользователь просит "оформи это как страницу", "сделай HTML", "визуализируй почемучку", "сверстай", "преврати в веб-страницу".
 ---
 
 # pochemuchka-render
@@ -15,7 +15,7 @@ description: Рендерит markdown-результат навыка pochemuch
 
 ## Что это делает
 
-1. Принимает markdown в формате выхода `pochemuchka` (тезис + цепочка "Почему?" + Корень + Линза + Переход)
+1. Принимает markdown в формате выхода `pochemuchka` (тезис + цепочка "Почему?" + Корень + Линза + AI-проверка + Переход)
 2. Парсит структуру
 3. Генерирует `*.html` — полностью self-contained, без CDN, без внешних шрифтов, без внешних CSS
 4. Пишет файл в `pochemuchka-results/` (создаёт директорию при необходимости)
@@ -52,12 +52,16 @@ description: Рендерит markdown-результат навыка pochemuch
 | Ответ | Абзац/цитата (`>`) после вопроса | Timeline body / blockquote |
 | Корень | `## Корень` → текст | Root Cause Card |
 | Линза | `## Линза:` → markdown-таблица | Lens Transformations |
-| Переход | `## Переход` → список вопросов | Reflection Questions |
+| AI-проверка (текст) | `**AI-проверка:**` или `## AI-проверка` → абзац(ы) до таблицы | `{{AI_CHECK_BODY}}` |
+| AI-проверка (таблица) | markdown-таблица: Точка А→Б, Посредник, Тип артефакта, Атомы/связка | `{{AI_CHECK_ROWS}}` |
+| Переход | `## Переход` или `**Переход:**` → список вопросов | Reflection Questions |
 | Follow-up | `Хочешь, запустим почемучку глубже...` | Опускать по умолчанию |
 
 **Важно:** Если в markdown ответы оформлены как blockquote (`>`), в HTML они должны стать блоком с левой акцентной полосой и italic.
 
-**Если какого-то блока нет** (например, нет "Перехода" или нет даты) — пропусти секцию, не генерируй пустой блок.
+**Если какого-то блока нет** (например, нет "Перехода", нет "AI-проверки" или нет даты) — пропусти секцию, не генерируй пустой блок.
+
+**AI-проверка:** поддерживай `**AI-проверка:**` и `## AI-проверка`. Строку «Тип артефакта» нормализуй к одному из: `мост`, `приложение+агент`, `среда исполнения`.
 
 ### Шаг 2: Определить имя файла
 
@@ -452,6 +456,95 @@ description: Рендерит markdown-результат навыка pochemuch
     .lens-meaning-text { font-size: 0.9375rem; color: var(--text-secondary); line-height: 1.5; }
     .lens-meaning-text strong { color: var(--accent); }
 
+    /* ========== AI CHECK ========== */
+    .ai-check {
+      max-width: 900px;
+      margin: 32px auto 0;
+      padding: 20px 24px;
+      background: var(--accent-bg);
+      border-radius: 12px;
+      border-left: 3px solid var(--accent);
+    }
+    .ai-check-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .ai-check-body {
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 0.9375rem;
+      margin-bottom: 16px;
+    }
+    .ai-check-body strong { color: var(--accent-dark); }
+    [data-theme="dark"] .ai-check-body strong { color: var(--accent-light); }
+    .ai-check-table {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .ai-check-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    @media (min-width: 640px) {
+      .ai-check-row { flex-direction: row; gap: 16px; }
+      .ai-check-field { width: 180px; flex-shrink: 0; }
+    }
+    .ai-check-field {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .ai-check-value {
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 0.9375rem;
+    }
+    .artifact-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.02em;
+    }
+    .artifact-badge.bridge {
+      background: var(--surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .artifact-badge.app-agent {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+    [data-theme="dark"] .artifact-badge.app-agent {
+      background: #422006;
+      color: #fcd34d;
+      border-color: #78350f;
+    }
+    .artifact-badge.execution-env {
+      background: var(--accent-bg);
+      color: var(--accent-dark);
+      border: 1px solid var(--accent-light);
+    }
+    [data-theme="dark"] .artifact-badge.execution-env {
+      color: var(--accent-light);
+    }
+
     /* ========== REFLECTION ========== */
     .reflection-list { display: flex; flex-direction: column; gap: 24px; max-width: 900px; }
     .reflection-card {
@@ -620,6 +713,7 @@ description: Рендерит markdown-результат навыка pochemuch
       <div class="lens-grid reveal" style="margin-top:32px;">
         {{LENS_ROWS}}
       </div>
+      {{AI_CHECK_SECTION}}
     </section>
 
     <!-- REFLECTION -->
@@ -760,6 +854,39 @@ description: Рендерит markdown-результат навыка pochemuch
 
 `{{MEANING_TEXT}}` — текст из колонки "Для человека это" (или "Для человека"). Если там жирный текст (`**текст**`), оберни в `<strong style="color:var(--accent);">`.
 
+### `{{AI_CHECK_SECTION}}`
+Если в markdown нет блока AI-проверки — пустая строка. Иначе:
+
+```html
+<div class="ai-check reveal">
+  <span class="ai-check-label">AI-проверка</span>
+  <p class="ai-check-body">{{AI_CHECK_BODY}}</p>
+  <div class="ai-check-table">
+    {{AI_CHECK_ROWS}}
+  </div>
+</div>
+```
+
+### `{{AI_CHECK_BODY}}`
+Текст после `**AI-проверка:**` (или `## AI-проверка`) до markdown-таблицы. Жирный markdown (`**...**`) → `<strong>`.
+
+### `{{AI_CHECK_ROWS}}`
+Для каждой строки таблицы AI-проверки (кроме заголовка):
+
+```html
+<div class="ai-check-row">
+  <span class="ai-check-field">{{FIELD}}</span>
+  <span class="ai-check-value">{{VALUE}}</span>
+</div>
+```
+
+Для строки **Тип артефакта** оберни значение в `artifact-badge` с классом по нормализованному типу:
+- `мост` → `<span class="artifact-badge bridge">мост</span>`
+- `приложение+агент` → `<span class="artifact-badge app-agent">приложение+агент</span>`
+- `среда исполнения` → `<span class="artifact-badge execution-env">среда исполнения</span>`
+
+Остальные поля — обычный текст в `ai-check-value`.
+
 ### `{{REFLECTION_ITEMS}}`
 Для каждого вопроса из секции "Переход":
 
@@ -782,7 +909,8 @@ description: Рендерит markdown-результат навыка pochemuch
 
 - **Никаких внешних зависимостей.** Ни Tailwind CDN, ни Google Fonts, ни внешние SVG, ни иконочные шрифты. Всё inline.
 - **Никаких изображений.** Если пользователь хочет иллюстрации — предупреди, что навык их не генерирует.
-- **Follow-up секция опускается** ("Хочешь, запустим почемучку глубше...") — по умолчанию не включается.
+- **Follow-up секция опускается** ("Хочешь, запустим почемучку глубже...") — по умолчанию не включается.
+- **Секция "AI-проверка" опускается**, если в markdown её нет.
 - **Секция "Переход" опускается**, если в markdown её нет.
 - **Не давай пошаговых инструкций в навыке** — навык просто рендерит, он не анализирует.
 - **Если markdown не соответствует формату pochemuchka** — сообщи пользователю, что формат не распознан, и покажи пример ожидаемой структуры.
@@ -804,6 +932,13 @@ description: Рендерит markdown-результат навыка pochemuch
 ## Линза: ...
 | Было | Стало | Для человека |
 ...
+**AI-проверка:**
+«Стало» здесь — это не новое приложение с агентом...
+| Поле | По кейсу |
+| **Точка А → Б** | [текущее] → [желаемое] |
+| **Посредник сегодня** | формы, статусы, согласования |
+| **Тип артефакта** | среда исполнения |
+| **Атомы / связка** | заявка, согласование, CRM, почта |
 ## Переход
 - ...
 - ...
@@ -830,6 +965,7 @@ description: Рендерит markdown-результат навыка pochemuch
 - Timeline с нумерацией "Почему?"
 - Карточка "Корень"
 - Таблица "Линза"
+- Блок "AI-проверка" (текст + таблица типа артефакта)
 - Вопросы для размышления
 - Scroll-reveal анимация (соблюдает prefers-reduced-motion)
 
