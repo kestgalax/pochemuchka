@@ -90,8 +90,6 @@ AI меняет не инструменты — он меняет саму мо�
 
 ### Путь A: `npx skills add` (рекомендуемый)
 
-Если установлен [agent-skills CLI](https://github.com/vercel-labs/agent-skills) от Vercel:
-
 ```bash
 # Все навыки сразу
 npx skills add https://github.com/kestgalax/pochemuchka
