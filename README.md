@@ -99,8 +99,6 @@ npx skills add https://github.com/kestgalax/pochemuchka --skill "pochemuchka"
 npx skills add https://github.com/kestgalax/pochemuchka --skill "pochemuchka-render"
 ```
 
-*Примечание:* `npx skills add` требует установленного CLI `agent-skills`. Если он не установлен, используй Путь B или C.
-
 ### Путь B: `./setup.sh` или `setup.bat`
 
 Bash-скрипт для ручной установки. Работает на macOS/Linux (Bash 3.2+). Детектирует IDE в проекте и копирует навыки в нужную директорию.
