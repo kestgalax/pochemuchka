@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ontora: знание как объект vs намерение как оффер</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --text: #18181b;
+      --text-secondary: #52525b;
+      --text-muted: #a1a1aa;
+      --surface: #ffffff;
+      --surface-elevated: #f4f4f5;
+      --border: #e4e4e7;
+      --accent: #0d9488;
+      --accent-light: #14b8a6;
+      --accent-dark: #0f766e;
+      --accent-bg: #f0fdfa;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    [data-theme="dark"] {
+      --bg: #09090b;
+      --text: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --surface: #18181b;
+      --surface-elevated: #27272a;
+      --border: #3f3f46;
+      --accent: #2dd4bf;
+      --accent-light: #5eead4;
+      --accent-dark: #14b8a6;
+      --accent-bg: #134e4a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background 0.3s, color 0.3s;
+    }
+    ::selection { background: var(--accent-bg); color: var(--accent); }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    @media (min-width: 768px) { .container { padding: 0 48px; } }
+
+    .eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+    .display {
+      font-size: clamp(2rem, 5vw, 3.75rem);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .lead {
+      font-size: clamp(1.125rem, 2.5vw, 1.25rem);
+      line-height: 1.6;
+      color: var(--text-secondary);
+      max-width: 55ch;
+    }
+    .mono-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 50;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .theme-toggle:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .theme-toggle:focus { outline: none; box-shadow: 0 0 0 2px var(--accent); }
+    .theme-toggle svg { width: 20px; height: 20px; }
+    .theme-toggle .sun { color: #f59e0b; }
+    .theme-toggle .moon { color: #818cf8; }
+
+    .hero {
+      min-height: 80dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 80px 0 64px;
+      position: relative;
+    }
+    .hero-content { max-width: 65ch; position: relative; z-index: 2; }
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .hero-deco {
+      position: absolute;
+      right: 0;
+      top: 96px;
+      width: 300px;
+      height: 300px;
+      opacity: 0.04;
+      pointer-events: none;
+      display: none;
+    }
+    @media (min-width: 1024px) { .hero-deco { display: block; } }
+
+    .toc {
+      display: grid;
+      gap: 12px;
+      margin-top: 40px;
+      max-width: 520px;
+    }
+    .toc a {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-secondary);
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .toc a:hover { border-color: var(--accent-light); color: var(--text); }
+    .toc-num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .section { padding: 64px 0; }
+    @media (min-width: 768px) { .section { padding: 96px 0; } }
+    .section-title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .section-subtitle {
+      color: var(--text-secondary);
+      max-width: 55ch;
+      margin-bottom: 48px;
+    }
+
+    .layer-banner {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .layer-badge {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #fff;
+      background: var(--accent);
+      padding: 8px 12px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .layer-thesis {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      max-width: 70ch;
+    }
+
+    .timeline { position: relative; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 8px;
+      bottom: 8px;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--border), var(--text-muted), var(--border));
+    }
+    @media (min-width: 768px) {
+      .timeline::before { left: 88px; }
+    }
+    .timeline-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 64px;
+    }
+    @media (min-width: 768px) {
+      .timeline-item { grid-template-columns: 120px 1fr; gap: 32px; margin-bottom: 80px; }
+    }
+    .timeline-item:last-child { margin-bottom: 0; }
+
+    .timeline-marker {
+      position: absolute;
+      left: 8px;
+      top: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+    }
+    @media (min-width: 768px) {
+      .timeline-marker { left: 76px; }
+    }
+    .timeline-marker.accent { background: #0d9488; }
+    [data-theme="dark"] .timeline-marker.accent { background: #2dd4bf; }
+    .timeline-marker.accent-light { background: #14b8a6; }
+    [data-theme="dark"] .timeline-marker.accent-light { background: #5eead4; }
+    .timeline-marker.accent-dark { background: #0f766e; }
+    [data-theme="dark"] .timeline-marker.accent-dark { background: #14b8a6; }
+
+    .timeline-content { padding-left: 56px; }
+    @media (min-width: 768px) { .timeline-content { padding-left: 0; } }
+
+    .timeline-eyebrow {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 767px) { .timeline-eyebrow { display: none; } }
+
+    .timeline-mobile-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      padding-left: 32px;
+    }
+    @media (min-width: 768px) { .timeline-mobile-label { display: none; } }
+
+    .timeline-question {
+      font-size: clamp(1.125rem, 2vw, 1.25rem);
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.35;
+      margin-bottom: 12px;
+    }
+    .timeline-answer {
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 60ch;
+    }
+
+    .root-card {
+      position: relative;
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 32px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      margin-top: 48px;
+    }
+    @media (min-width: 768px) { .root-card { padding: 48px; } }
+    .root-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 32px;
+      bottom: 32px;
+      width: 4px;
+      background: var(--accent);
+      border-radius: 0 4px 4px 0;
+    }
+    .root-card-inner { padding-left: 16px; }
+    .root-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .root-title {
+      font-size: clamp(1.25rem, 3vw, 1.75rem);
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 16px;
+      max-width: 50ch;
+    }
+    .root-body {
+      color: var(--text-secondary);
+      line-height: 1.7;
+      max-width: 65ch;
+    }
+
+    .lens-grid { display: flex; flex-direction: column; gap: 16px; max-width: 900px; margin-top: 32px; }
+    .lens-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .lens-card:hover { border-color: var(--accent-light); }
+    .lens-row {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    @media (min-width: 768px) {
+      .lens-row { flex-direction: row; align-items: flex-start; gap: 24px; }
+    }
+    .lens-col { flex: 1; min-width: 0; }
+    .lens-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: 8px;
+    }
+    .lens-arrow svg { width: 24px; height: 24px; color: var(--accent); flex-shrink: 0; }
+    .lens-meaning {
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      margin-top: 12px;
+    }
+    @media (min-width: 768px) {
+      .lens-meaning {
+        padding-top: 0;
+        padding-left: 24px;
+        border-top: none;
+        border-left: 1px solid var(--border);
+        margin-top: 0;
+        width: 220px;
+        flex-shrink: 0;
+      }
+    }
+    .lens-label { margin-bottom: 6px; }
+    .lens-was { color: var(--text-secondary); line-height: 1.6; }
+    .lens-became { color: var(--text); font-weight: 500; line-height: 1.6; }
+    .lens-meaning-text { font-size: 0.9375rem; color: var(--text-secondary); line-height: 1.5; }
+    .lens-meaning-text strong { color: var(--accent); }
+
+    .reflection-list { display: flex; flex-direction: column; gap: 24px; max-width: 900px; margin-top: 40px; }
+    .reflection-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .reflection-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-color: var(--accent-light); }
+    .reflection-row { display: flex; gap: 20px; }
+    .reflection-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .reflection-badge span {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .reflection-text { font-size: 1.125rem; line-height: 1.6; color: var(--text); }
+
+    .summary-grid {
+      display: grid;
+      gap: 16px;
+      max-width: 900px;
+      margin-top: 32px;
+    }
+    @media (min-width: 768px) {
+      .summary-grid { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .summary-card h3 {
+      font-size: 0.95rem;
+      margin: 8px 0 12px;
+      color: var(--text);
+    }
+    .summary-card p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .quote-section { text-align: center; padding: 64px 0; }
+    .quote-icon {
+      width: 40px;
+      height: 40px;
+      color: var(--accent-bg);
+      margin: 0 auto 32px;
+    }
+    .quote-text {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 300;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 32px;
+    }
+    .quote-text .accent { color: var(--accent); }
+    .quote-line {
+      width: 64px;
+      height: 1px;
+      background: var(--border);
+      margin: 0 auto;
+    }
+
+    .footer {
+      padding: 48px 0;
+      border-top: 1px solid var(--border);
+    }
+    .footer-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    @media (min-width: 768px) {
+      .footer-inner { flex-direction: row; justify-content: space-between; align-items: center; }
+    }
+    .footer-text {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .layer-block { border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+  <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">
+    <svg class="sun" id="sunIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+      <circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+    </svg>
+    <svg class="moon" id="moonIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+    </svg>
+  </button>
+
+  <script>
+    (function() {
+      var html = document.documentElement;
+      var toggle = document.getElementById('themeToggle');
+      var sun = document.getElementById('sunIcon');
+      var moon = document.getElementById('moonIcon');
+      function updateIcons() {
+        if (html.getAttribute('data-theme') === 'dark') {
+          sun.style.display = 'block'; moon.style.display = 'none';
+        } else {
+          sun.style.display = 'none'; moon.style.display = 'block';
+        }
+      }
+      var saved = localStorage.getItem('pochemuchka-theme');
+      if (saved === 'dark') { html.setAttribute('data-theme', 'dark'); }
+      else if (saved === 'light') { html.removeAttribute('data-theme'); }
+      else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        html.setAttribute('data-theme', 'dark');
+      }
+      updateIcons();
+      toggle.addEventListener('click', function() {
+        if (html.getAttribute('data-theme') === 'dark') {
+          html.removeAttribute('data-theme'); localStorage.setItem('pochemuchka-theme', 'light');
+        } else {
+          html.setAttribute('data-theme', 'dark'); localStorage.setItem('pochemuchka-theme', 'dark');
+        }
+        updateIcons();
+      });
+    })();
+  </script>
+
+  <main class="container">
+
+    <section class="hero">
+      <div class="hero-deco" aria-hidden="true">
+        <svg viewBox="0 0 200 200" fill="none" style="width:100%;height:100%;color:var(--text);">
+          <circle cx="100" cy="40" r="6" fill="currentColor"/><circle cx="60" cy="90" r="6" fill="currentColor"/><circle cx="140" cy="90" r="6" fill="currentColor"/>
+          <circle cx="40" cy="150" r="6" fill="currentColor"/><circle cx="100" cy="150" r="6" fill="currentColor"/><circle cx="160" cy="150" r="6" fill="currentColor"/>
+          <path d="M100 46L60 84M100 46L140 84M60 96L40 144M60 96L100 144M140 96L100 144M140 96L160 144" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="hero-content">
+        <div class="hero-meta">
+          <span class="eyebrow">Анализ методом почемучка</span>
+          <span class="dot" style="color:var(--border);">·</span>
+          <span class="eyebrow" style="font-family:var(--font-mono);">2026-07-29</span>
+        </div>
+        <h1 class="display">Знание как объект vs намерение как оффер</h1>
+        <p class="lead" style="margin-top:24px;">А что если компаниям нужен не сервис «узнай, как все работают», а сервис «назови, что должно получиться — и добери минимум контекста»?</p>
+        <nav class="toc reveal" aria-label="Слои разбора">
+          <a href="#layer-1"><span class="toc-num">01</span> Нужно ли собирать знания у всех?</a>
+          <a href="#layer-2"><span class="toc-num">02</span> Почему знание-объект кажется неизбежным</a>
+          <a href="#layer-3"><span class="toc-num">03</span> А что если… другой оффер?</a>
+        </nav>
+      </div>
+    </section>
+
+    <!-- ========== LAYER 1 ========== -->
+    <section class="section layer-block" id="layer-1">
+      <div class="reveal">
+        <div class="layer-banner">
+          <span class="layer-badge">Слой 1</span>
+          <p class="layer-thesis">Есть разрыв между «сначала собрать у всех, как они работают» и «управлять операциями, не превращая людей в источник полного операционного знания».</p>
+        </div>
+        <h2 class="section-title">Цепочка «Почему?»</h2>
+      </div>
+      <div class="timeline" style="margin-top:48px;">
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent"><span>1</span></div>
+            <div class="timeline-mobile-label">Почему 1</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему кажется, что без явной сборки знаний у всех AI/трансформация не взлетят?</h3>
+            <p class="timeline-answer">Потому что «как работа реально делается» живёт в головах, не в системах: дашборды и SOP не видят handoff’ы, workaround’ы и микрошаги, на которых люди работают на автомате.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>2</span></div>
+            <div class="timeline-mobile-label">Почему 2</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему знание должно быть сначала извлечено у людей, а не взято из того, как работа уже проявляется?</h3>
+            <p class="timeline-answer">Потому что модель «сначала понять процесс → потом автоматизировать» предполагает, что процесс — это описание в голове эксперта. Онтология: интервью → карта → roadmap. Без карты агенту «нечего читать».</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>3</span></div>
+            <div class="timeline-mobile-label">Почему 3</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему «карта из голов» считается необходимым артефактом, а не симптомом слепоты системы?</h3>
+            <p class="timeline-answer">Потому что IT и операционка хранят события и статусы, но не смысл. Люди остаются переводчиками между реальностью и формой. Discovery — это массовый перевод.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>4</span></div>
+            <div class="timeline-mobile-label">Почему 4</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему без этого перевода система не может действовать?</h3>
+            <p class="timeline-answer">Потому что автоматизация и AI-агенты завязаны на скомпилированный контекст: workflow, поле, граф, playbook. Намерение не принимается напрямую — его нужно разложить в артефакты. Интервью ускоряет производство артефактов, но не отменяет слой.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>5</span></div>
+            <div class="timeline-mobile-label">Почему 5</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему «собрать у всех» кажется прогрессом, а не закреплением костыля?</h3>
+            <p class="timeline-answer">Потому что узкое место было в стоимости и скорости discovery. Ontora снимает bottleneck интервью, но оставляет предпосылку: ценность = полнота извлечённого знания. Вопрос «нужно ли знание как объект?» не ставится.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-dark"><span>6</span></div>
+            <div class="timeline-mobile-label">Почему 6</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему полнота знания у всех кажется единственным путём к точке, где проблемы нет?</h3>
+            <p class="timeline-answer">Потому что альтернатива — система, которая понимает намерение и контекст ситуации, а не архив «как мы обычно делаем». В Intent Infrastructure нужна не книга каждого шага, а берег: намерение + принципы.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal root-card">
+        <div class="root-card-inner">
+          <span class="root-label">Корень · слой 1</span>
+          <h2 class="root-title">Зависимость от явного знания как посредника</h2>
+          <p class="root-body">Между «проблема есть» и «проблемы нет» стоит не нехватка интервью, а зависимость от операционного знания как обязательного слоя. Устранять нужно не «медленно узнаём», а саму необходимость узнавать у всех, чтобы система могла действовать.</p>
+        </div>
+      </div>
+
+      <div class="reveal" style="margin-top:64px;">
+        <h2 class="section-title">Линза</h2>
+        <p class="section-subtitle">Данные → Контекст, Проблемы → Намерение, Решения → Принципы</p>
+      </div>
+      <div class="lens-grid">
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was">Транскрипты, process maps, «80% в головах», полный охват</p>
+            </div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became">Понимание ситуации по делу без обязательной полной книги</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «что рассказали», а <strong>что значит для исхода</strong></p>
+            </div>
+          </div>
+        </div>
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was">Tacit knowledge, слепые зоны CEO, AI без контекста</p>
+            </div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became">Операции идут к нужному исходу из желаемого результата</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «знания нет», а <strong>«работа к результату»</strong></p>
+            </div>
+          </div>
+        </div>
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was">Массовые интервью → синтез → roadmap → proprietary context</p>
+            </div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became">Намерение и границы важнее полной карты; знание — по необходимости</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «как опросить всех», а <strong>ориентир при неполной карте</strong></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" style="margin-top:64px; max-width:900px;">
+        <p class="mono-label" style="margin-bottom:12px;">Переход</p>
+        <h2 class="section-title">Вопросы</h2>
+        <div class="reflection-list">
+          <div class="reflection-card reveal">
+            <div class="reflection-row">
+              <div class="reflection-badge"><span>1</span></div>
+              <p class="reflection-text">Если ценность — не «прочитать компанию как книгу», а исполнить намерение без полной выгрузки голов — что остаётся от предложения «сначала узнай у всех»?</p>
+            </div>
+          </div>
+          <div class="reflection-card reveal">
+            <div class="reflection-row">
+              <div class="reflection-badge"><span>2</span></div>
+              <p class="reflection-text">Что мешает строить вокруг намерения и принципов, а не вокруг всё более быстрой сборки операционной памяти?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== LAYER 2 ========== -->
+    <section class="section layer-block" id="layer-2">
+      <div class="reveal">
+        <div class="layer-banner">
+          <span class="layer-badge">Слой 2</span>
+          <p class="layer-thesis">Есть разрыв между «знание о работе должно существовать как объект» и «работа может сходиться к исходу, не будучи овеществлённой в знание».</p>
+        </div>
+        <h2 class="section-title">Цепочка «Почему?»</h2>
+      </div>
+      <div class="timeline" style="margin-top:48px;">
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent"><span>1</span></div>
+            <div class="timeline-mobile-label">Почему 1</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему «знание как объект» кажется неизбежным?</h3>
+            <p class="timeline-answer">Потому что без него непонятно, на чём строить автоматизацию и решения: нужен носитель — документ, граф, база, «операционная память».</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>2</span></div>
+            <div class="timeline-mobile-label">Почему 2</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему действие требует носителя-знания?</h3>
+            <p class="timeline-answer">Потому что сначала представляют работу (описание), потом исполняют представление. Знание — клей между миром и тем, как машина умеет действовать.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>3</span></div>
+            <div class="timeline-mobile-label">Почему 3</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему представление должно быть заранее собрано?</h3>
+            <p class="timeline-answer">Потому что не доверяют действию «из ситуации». Объект-знание создаёт иллюзию контроля: «зафиксировали — значит управляем». Нефиксированное = неуправляемое.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>4</span></div>
+            <div class="timeline-mobile-label">Почему 4</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему незафиксированное кажется неуправляемым?</h3>
+            <p class="timeline-answer">Потому что зрелость измеряют артефактами: процесс, KPI, RACI, KB. Отсутствие объекта читается как риск, а не как другой режим координации.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>5</span></div>
+            <div class="timeline-mobile-label">Почему 5</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему зрелость привязали к артефактам, а не к исходам?</h3>
+            <p class="timeline-answer">Потому что исход плохо аудируется на входе, а артефакт — хорошо. Знание стало валютой координации между посредниками. AI унаследовал: «дай контекст» = «дай объект».</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>6</span></div>
+            <div class="timeline-mobile-label">Почему 6</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему AI усиливает спрос на эту валюту?</h3>
+            <p class="timeline-answer">Потому что агенты сильны по спецификации и слабы в удержании намерения. Рынок ускоряет производство спецификаций из голов, а не меняет модель на «намерение напрямую».</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-dark"><span>7</span></div>
+            <div class="timeline-mobile-label">Почему 7</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему отказаться от знания-объекта кажется невозможным?</h3>
+            <p class="timeline-answer">Потому что отказ угрожает контролю, передаваемости и бизнесу discovery. Неизбежность — институциональная: система вознаграждает овеществление сильнее, чем попадание в исход без него.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal root-card">
+        <div class="root-card-inner">
+          <span class="root-label">Корень · слой 2</span>
+          <h2 class="root-title">Неизбежность — проекция посредников, не свойство работы</h2>
+          <p class="root-body">«Знание как объект» кажется неизбежным не потому, что работа требует полной карты, а потому что координация, аудит и AI-стек умеют потреблять только овеществлённое. Путают управляемость через артефакт с управляемостью через намерение и исход.</p>
+        </div>
+      </div>
+
+      <div class="reveal" style="margin-top:64px;">
+        <h2 class="section-title">Линза</h2>
+      </div>
+      <div class="lens-grid">
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was">KB, process map, operational memory, proprietary context</p>
+            </div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became">Живое понимание ситуации: сколько знания достаточно сейчас</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «есть ли объект», а <strong>достаточно ли смысла для хода</strong></p>
+            </div>
+          </div>
+        </div>
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was">Нет карты → нельзя автоматизировать / доверить AI / аудировать</p>
+            </div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became">Контроль = попадание в результат и принципы, не полнота описания</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «знания нет», а <strong>«исход должен случиться»</strong></p>
+            </div>
+          </div>
+        </div>
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was">Быстрее и полнее овеществлять знание</p>
+            </div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became">Знание — расходник под намерение; объект — только когда без него ломается ответственность</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «как лучше зафиксировать», а <strong>когда фиксация нужна</strong></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" style="margin-top:64px; max-width:900px;">
+        <p class="mono-label" style="margin-bottom:12px;">Переход</p>
+        <h2 class="section-title">Вопросы</h2>
+        <div class="reflection-list">
+          <div class="reflection-card reveal">
+            <div class="reflection-row">
+              <div class="reflection-badge"><span>1</span></div>
+              <p class="reflection-text">Если неизбежность держится на аудите, передаваемости и слабости агентов — что вы защищаете, говоря «сначала узнать у всех»?</p>
+            </div>
+          </div>
+          <div class="reflection-card reveal">
+            <div class="reflection-row">
+              <div class="reflection-badge"><span>2</span></div>
+              <p class="reflection-text">Где граница: знание как временный костыль под исход vs знание как обязательный актив компании?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== LAYER 3 ========== -->
+    <section class="section layer-block" id="layer-3">
+      <div class="reveal">
+        <div class="layer-banner">
+          <span class="layer-badge">Слой 3</span>
+          <p class="layer-thesis">Есть разрыв между оффером «узнай, как все работают» и оффером «назови, что должно получиться — и добери минимум контекста»; полный опрос перестаёт быть ядром.</p>
+        </div>
+        <h2 class="section-title">Цепочка «Почему?»</h2>
+      </div>
+      <div class="timeline" style="margin-top:48px;">
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent"><span>1</span></div>
+            <div class="timeline-mobile-label">Почему 1</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему «узнай у всех» стало ядром оффера?</h3>
+            <p class="timeline-answer">Потому что боль рынка сформулирована как нехватка контекста. Прямой ответ на «нет контекста» — «достань из голов».</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>2</span></div>
+            <div class="timeline-mobile-label">Почему 2</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему ответ — полнота извлечения, а не попадание в исход?</h3>
+            <p class="timeline-answer">Потому что продавать легче измеримое на входе: охват, часы до insights, карта. Исход сложнее обещать и атрибутировать сервису интервью.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>3</span></div>
+            <div class="timeline-mobile-label">Почему 3</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему оффер «исход + минимум контекста» выглядит слабее?</h3>
+            <p class="timeline-answer">Потому что требует другой ответственности: не «мы прочитали компанию», а «мы помогли оказаться в нужном состоянии» — с намерением, критериями и выборочным добором.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>4</span></div>
+            <div class="timeline-mobile-label">Почему 4</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему «минимум контекста» пугает сильнее полной книги?</h3>
+            <p class="timeline-answer">Потому что полнота даёт страховку «ничего не упустили». Минимум требует суждения — его нельзя спрятать в артефакт, только держать как принцип.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-light"><span>5</span></div>
+            <div class="timeline-mobile-label">Почему 5</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Почему суждение и принципы сложно сделать ядром продукта?</h3>
+            <p class="timeline-answer">Потому что рынок покупает методы и deliverables, а не компасы. Видимый процесс («опросим всех») побеждает невидимое попадание в исход.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div></div>
+          <div class="timeline-content">
+            <div class="timeline-marker accent-dark"><span>6</span></div>
+            <div class="timeline-mobile-label">Почему 6</div>
+            <div class="timeline-eyebrow">Почему</div>
+            <h3 class="timeline-question">Что стоит между текущим оффером и «исход + минимум»?</h3>
+            <p class="timeline-answer">Смена единицы ценности: с операционной памяти как продукта — на достижение намерения, где знание и опрос — расходники. Пока единица = «книга», опрос всех в центре. Когда единица = «исход случился» — опрос один из инструментов добора.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal root-card">
+        <div class="root-card-inner">
+          <span class="root-label">Корень · слой 3</span>
+          <h2 class="root-title">Единица ценности: карта или берег</h2>
+          <p class="root-body">Если продукт — знание-как-объект, логичен оффер «узнай у всех». Если продукт — попадание в названное желаемое при минимуме контекста, полный опрос перестаёт быть центром. Между проблемой и её отсутствием — привычка продавать и покупать карту вместо берега.</p>
+        </div>
+      </div>
+
+      <div class="reveal" style="margin-top:64px;">
+        <h2 class="section-title">Линза</h2>
+      </div>
+      <div class="lens-grid">
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was">100% coverage, транскрипты, process maps, operational memory</p>
+            </div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became">Ровно тот смысл, без которого это намерение не исполнить</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «всё, что знают», а <strong>что нужно для верного хода</strong></p>
+            </div>
+          </div>
+        </div>
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was">AI слеп / CEO не видит / discovery долгий → опросить всех</p>
+            </div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became">Конкретный исход (цикл, сделка, close, rollout) должен случиться</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «знания нет», а <strong>«должно получиться X»</strong></p>
+            </div>
+          </div>
+        </div>
+        <div class="lens-card reveal">
+          <div class="lens-row">
+            <div class="lens-col">
+              <div class="lens-label mono-label">Было</div>
+              <p class="lens-was">Массовые интервью → синтез → roadmap</p>
+            </div>
+            <div class="lens-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            <div class="lens-col">
+              <div class="lens-label mono-label" style="color:var(--accent);">Стало</div>
+              <p class="lens-became">Сначала берег (исход + границы); знание и опрос — по необходимости</p>
+            </div>
+            <div class="lens-meaning">
+              <p class="lens-meaning-text">Не «как лучше прочитать», а <strong>когда открывать книгу</strong></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" style="margin-top:64px; max-width:900px;">
+        <p class="mono-label" style="margin-bottom:12px;">Переход</p>
+        <h2 class="section-title">Вопросы</h2>
+        <div class="reflection-list">
+          <div class="reflection-card reveal">
+            <div class="reflection-row">
+              <div class="reflection-badge"><span>1</span></div>
+              <p class="reflection-text">Если единица ценности — «исход случился», а не «компания прочитана» — что из предложения Ontora обязательно, а что лишь способ добрать контекст?</p>
+            </div>
+          </div>
+          <div class="reflection-card reveal">
+            <div class="reflection-row">
+              <div class="reflection-badge"><span>2</span></div>
+              <p class="reflection-text">Что мешает сформулировать оффер так, чтобы клиент покупал берег (намерение + принципы), а не мост (полная карта из голов)?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== SUMMARY ========== -->
+    <section class="section">
+      <div class="reveal">
+        <h2 class="section-title">Сводка корней</h2>
+        <p class="section-subtitle">Три слоя — одна линия: от сомнения в сборке знаний к смене единицы ценности.</p>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-card reveal">
+          <span class="mono-label" style="color:var(--accent);">Слой 1</span>
+          <h3>Посредник</h3>
+          <p>Зависимость от явного операционного знания — не «медленно узнаём», а «обязаны узнавать у всех».</p>
+        </div>
+        <div class="summary-card reveal">
+          <span class="mono-label" style="color:var(--accent);">Слой 2</span>
+          <h3>Неизбежность</h3>
+          <p>Знание-объект неизбежен институционально (аудит, передаваемость, AI-по-спеке), не онтологически.</p>
+        </div>
+        <div class="summary-card reveal">
+          <span class="mono-label" style="color:var(--accent);">Слой 3</span>
+          <h3>Оффер</h3>
+          <p>Единица ценности = карта vs берег. Пока продают книгу — опрос в центре; если исход — опрос расходник.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="quote-section">
+      <div class="reveal">
+        <svg class="quote-icon" viewBox="0 0 32 32" fill="currentColor">
+          <path d="M10 8c-3.3 0-6 2.7-6 6v10h10V14H8c0-1.1.9-2 2-2V8zm14 0c-3.3 0-6 2.7-6 6v10h10V14h-6c0-1.1.9-2 2-2V8z"/>
+        </svg>
+        <blockquote class="quote-text">
+          Понимай ситуацию.<br><span class="accent">Опиши желаемое.</span><br>Доверься принципам.
+        </blockquote>
+        <div class="quote-line"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-text">Анализ методом почемучка · 2026-07-29</p>
+        <p class="footer-text">Ontora · intent vs knowledge</p>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    (function() {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+      document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+    })();
+  </script>
+
+</body>
+</html>
